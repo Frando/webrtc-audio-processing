@@ -71,12 +71,14 @@ mod webrtc {
     fn copy_source_to_out_dir() -> Result<PathBuf, Error> {
         use fs_extra::dir::CopyOptions;
 
+        println!("PRE");
         if Path::new(BUNDLED_SOURCE_PATH).read_dir()?.next().is_none() {
             eprintln!("The webrtc-audio-processing source directory is empty.");
             eprintln!("See the crate README for installation instructions.");
             eprintln!("Remember to clone the repo recursively if building from source.");
             bail!("Aborting compilation because bundled source directory is empty.");
         }
+        println!("POST");
 
         let out_dir = out_dir();
         let mut options = CopyOptions::new();
@@ -101,13 +103,16 @@ mod webrtc {
         run_command(&build_dir, "autoconf", None)?;
 
         let target = std::env::var("TARGET").unwrap();
-        autotools::Config::new(build_dir)
+        let mut config = autotools::Config::new(build_dir);
+
+        config
             .cflag("-fPIC")
             .cxxflag("-fPIC")
             .config_option("host", Some(&target))
             .disable_shared()
-            .enable_static()
-            .build();
+            .enable_static();
+
+        config.build();
 
         Ok(())
     }
